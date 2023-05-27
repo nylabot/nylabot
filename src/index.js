@@ -3,6 +3,8 @@ const { Client, Collection, Events, GatewayIntentBits, Routes } = require('disco
 const { client, rest } = require('./discord');
 const path = require('node:path');
 const fs = require('node:fs');
+const dockerNames = require('docker-names');
+const surreal = require('./surreal');
 
 const commands = new Collection();
 const buttons = new Collection();
@@ -82,3 +84,35 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
 });
+
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+    console.log(newState)
+
+    if (newState.channelId === config.get('discord.createVoiceChannelId')) {
+        // Create new voice channel
+        createVoiceChannel(oldState, newState)
+    }
+
+    if (newState.channelId === null) {
+        const [{result}] = await surreal.query('SELECT id FROM $id', {id: `tempvoice:${oldState.channel.id}`});
+        if (result.length > 0) {
+            const channel = await newState.guild.channels.fetch(oldState.channel.id)
+            if (channel.members.size === 0) {
+                await newState.guild.channels.delete(channel, 'All users left the temporary channel.')
+                await surreal.delete(`tempvoice:${channel.id}`)
+            }
+        }
+    }
+})
+
+async function createVoiceChannel(oldState, newState) {
+    const name = dockerNames.getRandomName(false).replace('_', '-');
+    const channel = await newState.guild.channels.create({ type: 2, name , reason: 'User joined the new-channel channel.', parent: config.get('discord.createVoiceCategoryId') });
+
+    await surreal.create(`tempvoice`, {
+        id: `tempvoice:${channel.id}`,
+        name
+    })
+
+    newState.setChannel(channel);
+}

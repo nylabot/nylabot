@@ -23,7 +23,7 @@ module.exports = {
 	/**
 	 * @param {import('discord.js').CommandInteraction} interaction 
 	 */
-	async execute(interaction) {		
+	async execute(interaction) {
 		if (interaction.options.getSubcommand() === 'search') {
 			return await search(interaction)
 		}

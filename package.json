@@ -6,6 +6,7 @@
   "dependencies": {
     "config": "^3.3.9",
     "discord.js": "^14.7.1",
+    "docker-names": "^1.2.1",
     "surrealdb.js": "^0.5.0"
   }
 }
