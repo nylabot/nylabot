@@ -93,14 +93,13 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
         createVoiceChannel(oldState, newState)
     }
 
-    if (newState.channelId === null) {
-        const [{result}] = await surreal.query('SELECT id FROM $id', {id: `tempvoice:${oldState.channel.id}`});
-        if (result.length > 0) {
-            const channel = await newState.guild.channels.fetch(oldState.channel.id)
-            if (channel.members.size === 0) {
-                await newState.guild.channels.delete(channel, 'All users left the temporary channel.')
-                await surreal.delete(`tempvoice:${channel.id}`)
-            }
+    const [{result}] = await surreal.query('SELECT id FROM $id', {id: `tempvoice:${oldState.channel.id}`});
+    
+    if (result.length > 0) {
+        const channel = await newState.guild.channels.fetch(oldState.channel.id)
+        if (channel.members.size === 0) {
+            await newState.guild.channels.delete(channel, 'All users left the temporary channel.')
+            await surreal.delete(`tempvoice:${channel.id}`)
         }
     }
 })
